@@ -1,11 +1,14 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <limits.h>
 
 /*
 ** options:
 ** -c="int"
 ** -w="int"
+** -b="int"
+** -e="int"
 ** -r
 ** "input.txt"
 ** "output.txt"
@@ -16,136 +19,224 @@
 int main(int argc, char *argv[])
 {	
 
-	int col = 0, sym=0, r=0, txt_size = 0;
-	int i, j, k, l;
+	int col = 0, sym=0, r=0, txt_size = 0, in_size = 0, out_size = 0, start = 0, stop = INT_MAX;
+	int i, j, k, l, f = 0;
+	
 	char c;
 	char *file_out = NULL;
 	char *file_in = NULL;
 	
-	char *txt;
+	char *txt, *intro, *outro;
+
 	
-	if (argc == 3) {
-		if (OPT(1, 'c') && OPT(2, 'w')){
-			for(i = 3; i < strlen(argv[1]); i++){
-				col *= 10;
-				col += argv[1][i] - '0';
-			}
-			for(i = 3; i < strlen(argv[2]); i++){
-				sym *= 10;
-				sym += argv[2][i] - '0';
-			}
-			r = 0;
-		}
-		else {
-			printf ("Wrong options\nUsage:\n-c='number_of_columns' (required)\n-w='width_of_column' (required)\n-r (allow splits) \n'input_filename.txt' \n'output_filename.txt'");
-			return 0;
-		}
-	}
-	else if (argc == 4) {
-		if (OPT(1, 'c') && OPT(2, 'w') && OPT(3, 'r')){
-			for(i = 3; i < strlen(argv[1]); i++){
-				col *= 10;
-				col += argv[1][i] - '0';
-			}
-			for(i = 3; i < strlen(argv[2]); i++){
-				sym *= 10;
-				sym += argv[2][i] - '0';
-			}
-			r = 1;
-		}
-		else if (OPT(1, 'c') && OPT(2, 'w') && strlen(argv[3]) != 0){
-			for(i = 3; i < strlen(argv[1]); i++){
-				col *= 10;
-				col += argv[1][i] - '0';
-			}
-			for(i = 3; i < strlen(argv[2]); i++){
-				sym *= 10;
-				sym += argv[2][i] - '0';
-			}
-			file_in = (char*) malloc ((strlen(argv[3]) + 1)*sizeof(char));
-			strcpy(file_in, argv[3]);
-		}
-		else {
-			printf ("Wrong options\nUsage:\n-c='number_of_columns' (required)\n-w='width_of_column' (required)\n-r (allow splits) \n'input_filename.txt' \n'output_filename.txt'");
-			return 0;
-		}
-	}
-	else if (argc == 5) {
-		if (OPT(1, 'c') && OPT(2, 'w') && OPT(3, 'r') && strlen(argv[4]) != 0){
-			for(i = 3; i < strlen(argv[1]); i++){
-				col *= 10;
-				col += argv[1][i] - '0';
-			}
-			for(i = 3; i < strlen(argv[2]); i++){
-				sym *= 10;
-				sym += argv[2][i] - '0';
-			}
-			r = 1;
-			file_in = (char*) malloc ((strlen(argv[4]) + 1)*sizeof(char));
-			strcpy(file_in, argv[4]);
-		}
-		else if (OPT(1, 'c') && OPT(2, 'w') && strlen(argv[3]) != 0 && strlen(argv[4]) != 0) {
-			for(i = 3; i < strlen(argv[1]); i++){
-				col *= 10;
-				col += argv[1][i] - '0';
-			}
-			for(i = 3; i < strlen(argv[2]); i++){
-				sym *= 10;
-				sym += argv[2][i] - '0';
-			}
-			file_in = (char*) malloc ((strlen(argv[3]) + 1)*sizeof(char));
-			strcpy(file_in, argv[3]);
-			file_out = (char*) malloc ((strlen(argv[4]) + 1)*sizeof(char));
-			strcpy(file_out, argv[4]);
-		}
-		else {
-			printf ("Wrong options\nUsage:\n-c='number_of_columns' (required)\n-w='width_of_column' (required)\n-r (allow splits) \n'input_filename.txt' \n'output_filename.txt'");
-			return 0;
-		}
-	}
-	else if (argc == 6) {
-		if (OPT(1, 'c') && OPT(2, 'w') && OPT(3, 'r') && strlen(argv[4]) != 0 && strlen(argv[5]) != 0) {
-			for(i = 3; i < strlen(argv[1]); i++){
-				col *= 10;
-				col += argv[1][i] - '0';
-			}
-			for(i = 3; i < strlen(argv[2]); i++){
-				sym *= 10;
-				sym += argv[2][i] - '0';
-			}
-			r = 1;
-			file_in = (char*) malloc ((strlen(argv[4]) + 1)*sizeof(char));
-			strcpy(file_in, argv[4]);
-			file_out = (char*) malloc ((strlen(argv[5]) + 1)*sizeof(char));
-			strcpy(file_out, argv[5]);
-		}
-	}
-	else {
-		printf ("Wrong options\nUsage:\n-c='number_of_columns' (required)\n-w='width_of_column' (required)\n-r (allow splits) \n'input_filename.txt' \n'output_filename.txt'");
+	if (argc < 3) {
+		printf ("Wrong options\nUsage:\n-c='number_of_columns' (required)\n-w='width_of_column' (required)\n-r (allow splits) \n-b='start row'\n-e='stop row'\n'input_filename.txt' \n'output_filename.txt'");
 		return 0;
 	}
+	else {
+		i = 1;
+		
+		while (i < argc) {
+			
+			if (OPT(i, 'c')) {
+				
+				if (strlen(argv[i]) >= 4) {
+					for(j = 3; j < strlen(argv[i]); j++){
+						col *= 10;
+						col += argv[i][j] - '0';
+					}
+					i++;
+					continue;
+				} else {
+					if (strlen(argv[i]) == 2) {
+						i++;
+						if (argv[i][0] == '=') {
+							i++;
+							for(j = 0; j < strlen(argv[i]); j++){
+								col *= 10;
+								col += argv[i][j] - '0';
+							}
+							i++;
+							continue;
+						}
+						else {
+							printf ("Wrong options\nUsage:\n-c='number_of_columns' (required)\n-w='width_of_column' (required)\n-r (allow splits) \n-b='start row'\n-e='stop row'\n'input_filename.txt' \n'output_filename.txt'");
+							return 0;
+						}
+					} else {
+						printf ("Wrong options\nUsage:\n-c='number_of_columns' (required)\n-w='width_of_column' (required)\n-r (allow splits) \n-b='start row'\n-e='stop row'\n'input_filename.txt' \n'output_filename.txt'");
+						return 0;
+					}
+				}
+			}
+			
+			if (OPT(i, 'w')) {
+				if (strlen(argv[i]) >= 4) {
+					for(j = 3; j < strlen(argv[i]); j++){
+						sym *= 10;
+						sym += argv[i][j] - '0';
+					}
+					i++;
+					continue;
+				} else {
+					if (strlen(argv[i]) == 2) {
+						i++;
+						if (argv[i][0] == '=') {
+							i++;
+							for(j = 0; j < strlen(argv[i]); j++){
+								sym *= 10;
+								sym += argv[i][j] - '0';
+							}
+							i++;
+							continue;
+						}
+						else {
+							printf ("Wrong options\nUsage:\n-c='number_of_columns' (required)\n-w='width_of_column' (required)\n-r (allow splits) \n-b='start row'\n-e='stop row'\n'input_filename.txt' \n'output_filename.txt'");
+							return 0;
+						}
+					} else {
+						printf ("Wrong options\nUsage:\n-c='number_of_columns' (required)\n-w='width_of_column' (required)\n-r (allow splits) \n-b='start row'\n-e='stop row'\n'input_filename.txt' \n'output_filename.txt'");
+						return 0;
+					}
+				}
+			}
+			
+			if (OPT(i, 'b')) {
+				if (strlen(argv[i]) >= 4) {
+					for(j = 3; j < strlen(argv[i]); j++){
+						start *= 10;
+						start += argv[i][j] - '0';
+					}
+					i++;
+					continue;
+				} else {
+					if (strlen(argv[i]) == 2) {
+						i++;
+						if (argv[i][0] == '=') {
+							i++;
+							for(j = 0; j < strlen(argv[i]); j++){
+								start *= 10;
+								start += argv[i][j] - '0';
+							}
+							i++;
+							continue;
+						}
+						else {
+							printf ("Wrong options\nUsage:\n-c='number_of_columns' (required)\n-w='width_of_column' (required)\n-r (allow splits) \n-b='start row'\n-e='stop row'\n'input_filename.txt' \n'output_filename.txt'");
+							return 0;
+						}
+					} else {
+						printf ("Wrong options\nUsage:\n-c='number_of_columns' (required)\n-w='width_of_column' (required)\n-r (allow splits) \n-b='start row'\n-e='stop row'\n'input_filename.txt' \n'output_filename.txt'");
+						return 0;
+					}
+				}
+			}
+			
+			if (OPT(i, 'e')) {
+				if (strlen(argv[i]) >= 4) {
+					stop = 0;
+					for(j = 3; j < strlen(argv[i]); j++){
+						stop *= 10;
+						stop += argv[i][j] - '0';
+					}
+					i++;
+					continue;
+				} else {
+					if (strlen(argv[i]) == 2) {
+						i++;
+						if (argv[i][0] == '=') {
+							i++;
+							stop = 0;
+							for(j = 0; j < strlen(argv[i]); j++){
+								stop *= 10;
+								stop += argv[i][j] - '0';
+							}
+							i++;
+							continue;
+						}
+						else {
+							printf ("Wrong options\nUsage:\n-c='number_of_columns' (required)\n-w='width_of_column' (required)\n-r (allow splits) \n-b='start row'\n-e='stop row'\n'input_filename.txt' \n'output_filename.txt'");
+							return 0;
+						}
+					} else {
+						printf ("Wrong options\nUsage:\n-c='number_of_columns' (required)\n-w='width_of_column' (required)\n-r (allow splits) \n-b='start row'\n-e='stop row'\n'input_filename.txt' \n'output_filename.txt'");
+						return 0;
+					}
+				}
+			}
+			
+			if (OPT(i, 'r')) {
+				r = 1; 
+				i++;
+				continue;
+			}
+			
+			if (argv[i][0] != '-' && f == 0) {
+				file_in = (char*) malloc ((strlen(argv[i]) + 1)*sizeof(char));
+				strcpy(file_in, argv[i]);
+				f++;
+				i++;
+				continue;
+			}
+			else if (argv[i][0] != '-' && f == 1) {
+				file_out = (char*) malloc ((strlen(argv[i]) + 1)*sizeof(char));
+				strcpy(file_out, argv[i]);
+				f++;
+				i++;
+				continue;
+			}
+			else {
+				printf ("Wrong options\nUsage:\n-c='number_of_columns' (required)\n-w='width_of_column' (required)\n-r (allow splits) \n-b='start row'\n-e='stop row'\n'input_filename.txt' \n'output_filename.txt'");
+				return 0;
+			}
+		}
+	}
+	
 	
 	if (file_in != NULL) {
 		FILE *in=fopen(file_in, "r");
 		
-		
+		i = 0;
 		fscanf(in, "%c", &c);
 		while (!feof(in)){
-			if (c != '\n')              
+			if (c == '\n') i++;
+			if (i < start-1) {
+				in_size++;
+			} else if (i >= stop) {
+				out_size++;
+			} else {              
 				txt_size++;
+			}
 			fscanf(in, "%c", &c);
 		}
 		
 		fclose(in);
 		in=fopen(file_in, "r");
 		
+		intro = (char*)calloc(in_size, sizeof(char));
 		txt= (char*)calloc(txt_size, sizeof(char));
+		outro = (char*)calloc(out_size, sizeof(char));
+		
+		i = 0;
+		while (i < in_size){
+			fscanf(in, "%c", &c);              //êîïèðóåì òåêñò
+			intro[i++] = c;
+		}
+		
 		i = 0;
 		while (i < txt_size){
 			fscanf(in, "%c", &c);
-			if (c != '\n'){              //копируем текст
+			if (c != '\n'){              //êîïèðóåì òåêñò
 				txt[i++] = c;
+			} else {
+				txt[i++] = ' ';
 			}
+		}
+		
+		i = 0;
+		while (i < out_size){
+			fscanf(in, "%c", &c);              //êîïèðóåì òåêñò
+			outro[i++] = c;
 		}
 	}
 	else {
@@ -158,7 +249,6 @@ int main(int argc, char *argv[])
 			scanf ("%c", &c);
 		}
 		txt_size = i;
-
 	}
 	
 		
@@ -173,6 +263,10 @@ int main(int argc, char *argv[])
 		int col_size=txt_size/col; 
 		int row_num=col_size/sym;  
 		
+		for (i = 0; i < in_size; i++)
+			printf ("%c", intro[i]);
+		printf ("\n");
+		
 		for (i=0; i<row_num; i++){
 			for (j=0; j<col; j++){
 				for (k=0; k<sym; k++){
@@ -186,6 +280,10 @@ int main(int argc, char *argv[])
 				}
 			}
 		}
+		
+		printf ("\n");
+		for (i = 0; i < out_size; i++)
+			printf ("%c", outro[i]);
 	}
 	
 	else {
@@ -199,8 +297,11 @@ int main(int argc, char *argv[])
 		i = 0;
 		word = strtok (txt, " ");
 		while (i < str_num && word){
+			
 			k = 0;
 			if (sym < strlen(word)){
+				buf = (char*) malloc((strlen(word))*sizeof(char));
+				
 				strcpy(buf, word);             
 				for (j = 0; j < sym; j++){
 					str[i][j] = buf[j];
@@ -210,8 +311,10 @@ int main(int argc, char *argv[])
 				for (l = sym; l < strlen(buf); l++){
 					word[l - sym] = buf[l];
 				}
-				break;
+				i++;
+				continue;
 			}
+			
 			
 			while (sym - k >= strlen(word)) {
 				
@@ -236,6 +339,10 @@ int main(int argc, char *argv[])
 		
 		int row_num = (i+1) / col; 
 		
+		for (i = 0; i < in_size; i++)
+			printf ("%c", intro[i]);
+		printf ("\n");
+		
 		for (i = 0; i < row_num; i++){
 			for (j = 0; j < col; j++){
 				for (l = 0; l < sym; l++)
@@ -247,6 +354,10 @@ int main(int argc, char *argv[])
 				}
 			}
 		}
+		
+		printf ("\n");
+		for (i = 0; i < out_size; i++)
+			printf ("%c", outro[i]);
 		
 	}
 	return 0;		
