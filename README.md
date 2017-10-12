@@ -7,6 +7,7 @@ Usage:
 |option       |description                                                                                 |
 |-------------|--------------------------------------------------------------------------------------------|
 |-c="int"     |*The number of columns (required)*                                                          |
+|-w="int"     |*The width of column (required)*                                                            |
 |-b="int"     |*Begin from the symbol with number "b"*                                                     |
 |-e="int"     |*End with the symbol with number "e"*                                                       |
 |-r           |*Allow to cut and transfer to the next line part of words to fit them to columns precisely* |
